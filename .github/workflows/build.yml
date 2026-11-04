@@ -17,24 +17,25 @@ jobs:
         with:
           channel: stable
       - run: flutter create . --project-name nanami --org com.piyush1625 --platforms=android
-      - name: Force compileSdk 36 for all modules (including file_picker)
+      - name: Force compileSdk 36 for all modules
         run: |
-          # 1. Update the app's build.gradle (both possible file types)
+          # 1. Ensure the app module uses 36
           if [ -f android/app/build.gradle.kts ]; then
             sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle.kts
+            sed -i 's/compileSdk = 34/compileSdk = 36/g' android/app/build.gradle.kts
           fi
           if [ -f android/app/build.gradle ]; then
             sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' android/app/build.gradle
-            sed -i 's/compileSdk 34/compileSdk 36/g' android/app/build.gradle
+            sed -i 's/compileSdkVersion 34/compileSdkVersion 36/g' android/app/build.gradle
           fi
-          
-          # 2. Add a root-level override to force ALL subprojects (plugins) to SDK 36
+
+          # 2. Append the override block to the root android/build.gradle
           cat << 'GRADLE_EOF' >> android/build.gradle
           subprojects {
               afterEvaluate { project ->
                   if (project.hasProperty("android")) {
                       project.android {
-                          if (compileSdkVersion == 34 || compileSdkVersion == 35) {
+                          if (compileSdkVersion == null || compileSdkVersion.toString().startsWith("34") || compileSdkVersion.toString().startsWith("35")) {
                               compileSdkVersion 36
                           }
                       }
